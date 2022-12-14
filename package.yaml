@@ -1,0 +1,4 @@
+dependencies:
+  rs485:
+    url: github.com/toitware/toit-rs485
+    version: ^1.2.0
