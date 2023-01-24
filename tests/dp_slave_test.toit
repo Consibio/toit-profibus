@@ -1,5 +1,5 @@
 import ..src.dp_slave
-import ..src.util
+import .test_utils
 
 test_dp_slave:
   dp_slave := DpSlave --address=20 --station_status=4 --wd_fact_1=1 --wd_fact_2=5 --min_TSDR=0 --ident_number=0x06D1 --group_indent=0

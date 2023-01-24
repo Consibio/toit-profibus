@@ -1,7 +1,7 @@
 import ..src.dp_slave
 import ..src.dp_master
 import rs485
-import ..src.util
+import .test_utils
 import gpio
 import ..src.dp
 

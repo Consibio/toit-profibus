@@ -1,6 +1,6 @@
 import ..src.dp
 import ..src.fdl
-import ..src.util
+import .test_utils
 
 test_get_cfg_telegram:
   dp_get_cfg_request := DpTelegramGetCfgRequest --da=20 --sa=2
@@ -12,7 +12,7 @@ test_get_cfg_telegram:
 
 test_chk_cfg_telegram:
   response_du := #[0x01, 0x02]
-  dp_chk_cfg_request := DpTelegramChkCfg --da=20 --sa=2 --fc=0x6d --du=response_du
+  dp_chk_cfg_request := DpTelegramChkCfgRequest --da=20 --sa=2 --fc=0x6d --du=response_du
   // [SD = 0x68, LE = 0x07, LEr = 0x07, SD = 0x68, DA = 0x94, SA = 0x82, FC = 0x6d, DSAP = 0x3e, SSAP = 0x3e, DU[0] = 0x01, DU[1] = 0x02, FCS = 0xe2, ED = 0x16]
   compare_test --expected=0x14 --result=dp_chk_cfg_request.da --case="Check cfg 'da'"
   compare_test --expected=0x02 --result=dp_chk_cfg_request.sa --case="Get cfg 'sa'"
@@ -82,7 +82,7 @@ test_fdl_to_dp:
   raw_chk_cfg_request := #[0x68, 0x07, 0x07, 0x68, 0x94, 0x82, 0x6D, 0x3E, 0x3E, 0x9F, 0xA0, 0x3e, 0x16]
   fdl_chk_cfg_request := FdlTelegram.byte_array_to_fdl raw_chk_cfg_request
   dp_chk_cfg_request := DpTelegram.fdl_to_dp fdl_chk_cfg_request
-  compare_test --expected=true --result=dp_chk_cfg_request is DpTelegramChkCfg --case="Fdl to dp (chk cgf request)"
+  compare_test --expected=true --result=dp_chk_cfg_request is DpTelegramChkCfgRequest --case="Fdl to dp (chk cgf request)"
 
   // Parameterization //
   raw_set_prm_request := #[0x68, 0x0C, 0x0C, 0x68, 0x94, 0x82, 0x6D, 0x3D, 0x3E, 0x80, 0x01, 0x01, 0x00, 0x06, 0xD1, 0x00, 0x57, 0x16]

@@ -2,38 +2,79 @@
 
 class FdlTelegram:
 
-  // Start Delimiters
+  /**
+  Start delimiter for the no data FDL telegram
+  */
   static SD1 ::= 0x10
+  
+  /**
+  Start delimiter for the variable data FDL telegram
+  */
   static SD2 ::= 0x68
+  
+  /**
+  Start delimiter for the fixed data FDL telegram
+  */  
   static SD3 ::= 0xA2
+  
+  /**
+  Start delimiter for the master-to-master token FDL telegram
+  */  
   static SD4 ::= 0xDC
+  
+  /**
+  Start delimiter for the short acknowledgement FDL telegram
+  */  
   static SC ::= 0xE5
 
-  // End Delimiter
+  /** 
+  End delimiter
+  */ 
   static ED ::= 0x16
 
+  /**
+  The address extention bit used with telegrams using DSAP/SSAP.
+  */
   static ADDRESS_EXT ::= 0x80
 
+  /**
+  Function code value if first request
+  */
   static FC_FIRST_REQUEST ::= 0x6D
 
+  /**
+  Function code for request
+  */
   static FC_REQ ::= 0x40
+  /**
+  Function code for request telegrams (FC_REQ set).
+  Send and request data with acknowledge. 
+  */
   static FC_SRD_HI ::= 0x0D
 
+  /**
+  Function code for response telegrams (FC_REQ clear)
+  Response FDL data low and send data ok. 
+  */
   static FC_DL ::= 0x08
 
-  sd/int
-  da/int?
-  sa/int?
-  fc/int?
-  dae/int?
-  sae/int?
-  ed/int
-  du/ByteArray?
-  have_le/bool
-  have_fcs/bool
+  sd/int // Start delimiter
+  da/int? // Destination address
+  sa/int? // Source address
+  fc/int? // Function code
+  dae/int? // Destination address extentions (DSAP)
+  sae/int? // Source address extentions (SSAP)
+  ed/int // End delimiter
+  du/ByteArray? // Data unit
+  have_le/bool // Does the FDL telegram have a length field?
+  have_fcs/bool // Does the FDL telgram have a frame check sequence field?
 
   constructor --.sd --.have_le=false --.da --.sa --.fc --.dae --.sae --.du --.have_fcs=false .ed=ED:
 
+  /**
+  Calculates the lenght field for the FDL telegram. 
+  Returns the lenght
+  */
   calc_le -> int:
     da_sa_fc := 3
     le/int := 0
@@ -43,12 +84,20 @@ class FdlTelegram:
       le = da_sa_fc + du.size
     return le
 
+  /**
+  Calculates the frame check sequence (FCS) for the FDL telegram.
+  Returns the FCS. 
+  */
   static calc_fcs data/ByteArray -> int:
     fcs/int := 0
     data.do: | data_element |
       fcs += data_element
     return fcs & 0xFF
 
+  /**
+  Calculates the size of the FDL telegram.
+  Returns a byte array of the corect size, otherwise throw error. 
+  */
   calc_byte_array_size -> ByteArray?:
     if sd == SD1:
       return ByteArray (6)
@@ -64,6 +113,11 @@ class FdlTelegram:
     else:
       throw "Invalid start delimiter"
 
+  /**
+  Converts a byte array to a FDL telegram given the specified input byte array. 
+  Returns the FDL telegram.
+  Throws errors if there are errors in the recived input byte array. 
+  */
   static byte_array_to_fdl input/ByteArray -> FdlTelegram:
     startDelimiter := input[0]
     fdlTelegram/FdlTelegram? := null
@@ -80,8 +134,7 @@ class FdlTelegram:
       fdlTelegram = FdlTelegramNoData --da=input_da --sa=input_sa --fc=input_fc
       return fdlTelegram
 
-    if startDelimiter == SD2:
-    //end delimiter  
+    if startDelimiter == SD2: 
       input_le := input[1]
       if input_le != input[2]:
         throw "Invalid length repetition"
@@ -133,7 +186,6 @@ class FdlTelegram:
       fdlTelegram = FdlTelegramFixedData --da=input_da --sa=input_sa --fc=input_fc --du=input_du
       return fdlTelegram
 
-    //SD4
     if startDelimiter == SD4:
       throw "Token passing: Not yet implemented"
 
@@ -143,10 +195,14 @@ class FdlTelegram:
       fdlTelegram = FdlTelegramShortAcknowledge
       return fdlTelegram
     
-    //If FDLtelegram is not set, the SD does not match. 
+    // If FDLtelegram is not set, the SD does not match. 
     else:
       throw "Invalid start delimiter"
  
+  /**
+  Converts a FDL telegram to a byte array. 
+  Return the byte array. 
+  */
   to_byte_array -> ByteArray:
     data := calc_byte_array_size
     pos := 0
@@ -190,18 +246,30 @@ class FdlTelegram:
 
     return data
 
+/**
+The no data FDL telegram type
+*/
 class FdlTelegramNoData extends FdlTelegram:
   constructor --da/int --sa/int --fc/int:
     super --sd=FdlTelegram.SD1 --da=da --sa=sa --fc=fc --dae=null --sae=null --du=null --have_fcs=true
 
+/**
+The variable data FDL telegram type
+*/
 class FdlTelegramVariableData extends FdlTelegram:
   constructor --da/int --sa/int --fc/int --dae/int? --sae/int? --du/ByteArray?:
     super --sd=FdlTelegram.SD2 --have_le=true --da=da --sa=sa --fc=fc --dae=dae --sae=sae --du=du --have_fcs=true
 
+/**
+The fixed data FDL telegram type
+*/
 class FdlTelegramFixedData extends FdlTelegram:
   constructor --da/int --sa/int --fc/int --du/ByteArray?:
     super --sd=FdlTelegram.SD3 --da=da --sa=sa --fc=fc --dae=null --sae=null --du=du --have_fcs=true
   
+/**
+The short acknowledge FDL telegram type
+*/
 class FdlTelegramShortAcknowledge extends FdlTelegram:
   constructor:
     super --sd=FdlTelegram.SC --da=null --sa=null --fc=null --dae=null --sae=null --du=null

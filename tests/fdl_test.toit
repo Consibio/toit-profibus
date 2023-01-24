@@ -1,5 +1,5 @@
 import ..src.dp
-import ..src.util
+import .test_utils
 import ..src.fdl
 
 test_to_byte_array:
@@ -48,7 +48,7 @@ test_get_cfg_fdl_telegram:
 
 test_chk_cfg_fdl_telegram:
   response_du := #[0x01, 0x02]
-  dp_chk_cfg_request := DpTelegramChkCfg --da=20 --sa=2 --fc=0x6d --du=response_du
+  dp_chk_cfg_request := DpTelegramChkCfgRequest --da=20 --sa=2 --fc=0x6d --du=response_du
   expected_byte_array := #[0x68, 0x07, 0x07, 0x68, 0x94, 0x82, 0x6d, 0x3e, 0x3e, 0x01, 0x02, 0x02, 0x16] 
   compare_test --expected=expected_byte_array --result=dp_chk_cfg_request.dp_to_fdl_telegram.to_byte_array --case="Check chk cfg telegram is built correct"
 

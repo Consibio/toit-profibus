@@ -1,5 +1,5 @@
 # PROFIBUS-DP Driver for Toit
-This package supports the Profibus-DP fieldbus protocol. The package allows communication with a passive Profibus-DP enabled device. Certain features are implemented at the moment, such as setting up a slave to acheive the data exchange state. See the [dp.toit](src/dp.toit) and [dp_master.toit](src/dp_master.toit) files to view features and services implemented. The package cannot be used in a multi-master network, as master token sharing has not been implemented yet. 
+This package supports the Profibus-DP fieldbus protocol. The package allows communication with a passive Profibus-DP enabled device. Certain features are implemented at the moment, such as setting up a slave to achieve the data exchange state. See the [dp.toit](src/dp.toit) and [dp_master.toit](src/dp_master.toit) files to view features and services implemented. The package cannot be used in a multi-master network, as master token sharing has not been implemented yet. 
 
 # Resources
 Profibus DP Manual by Max Felser: https://felser.ch/profibus-manual/index.html

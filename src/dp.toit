@@ -24,20 +24,55 @@ abstract class DpTelegram:
   static DSAP_SLAVE_SET_PRM ::= 0x3D
   static DSAP_CHECK_CFG ::=  0x3E
   
+  /**
+  Destination address
+  */
   da/int?
+
+  /**
+  Source address
+  */
   sa/int?
+
+  /**
+  Function code
+  */
   fc/int?
+
+  /**
+  Destination service access point
+  */
   dsap/int?
+
+  /**
+  Source service access point
+  */
   ssap/int?
+
+  /**
+  Data unit
+  */
   du/ByteArray
 
   constructor --.da --.sa --.fc --.dsap --.ssap --.du:
 
+  /**
+  Implemented in each subclass.
+  Converts a DP telegram to a FDL telegram. 
+  */
   abstract dp_to_fdl_telegram -> FdlTelegram
 
+  /**
+  Returns the data unit from the DP telegram
+  */
   get_du -> ByteArray:
     return du
   
+  /**
+  Converts FDL telegrams to DP telegrams by using the specified fdl_telegram. 
+  Returns the corresponding DP telegram from the FDL telegram.
+  Throw error if the FDL telegram did not match any known DP telegram. 
+  */
   static fdl_to_dp fdl_telegram/FdlTelegram -> DpTelegram?:
     // --- Telegrams with no DSAP/SSAP --- //
     if fdl_telegram is FdlTelegramShortAcknowledge:
@@ -98,7 +133,7 @@ abstract class DpTelegram:
           --dsap=fdl_telegram.dae 
           --ssap=fdl_telegram.sae 
       else if fdl_telegram.dae == DSAP_CHECK_CFG:
-        return DpTelegramChkCfg
+        return DpTelegramChkCfgRequest
           --da=fdl_telegram.da 
           --sa=fdl_telegram.sa 
           --fc=fdl_telegram.fc 
@@ -130,6 +165,9 @@ abstract class DpTelegram:
       throw "UNKNOWN SSAP OR DSAP"
 
 // --- REQUESTS --- //
+/**
+Diagnose request DP telegram
+*/
 class DpTelegramDiagnoseRequest extends DpTelegram:
   constructor --da/int --sa/int --fc/int=(FdlTelegram.FC_SRD_HI | FdlTelegram.FC_REQ) --dsap/int=DpTelegram.DSAP_SLAVE_DIAG --ssap/int=DpTelegram.SSAP_MS0:
     super --da=da --sa=sa --fc=fc --dsap=dsap --ssap=ssap --du=#[]
@@ -137,6 +175,9 @@ class DpTelegramDiagnoseRequest extends DpTelegram:
   dp_to_fdl_telegram -> FdlTelegram:
     return FdlTelegramVariableData --da=da --sa=sa --fc=fc --dae=dsap --sae=ssap --du=du
 
+/**
+Set parameters request DP telegram
+*/
 class DpTelegramSetPrmRequest extends DpTelegram:
   // -- STATION STATUS -- //
   static STATION_WATCH_DOG_ON ::= 0x08	// Set this bit to active watchdog
@@ -192,6 +233,9 @@ class DpTelegramSetPrmRequest extends DpTelegram:
   dp_to_fdl_telegram -> FdlTelegram:
     return FdlTelegramVariableData --da=da --sa=sa --fc=fc --dae=dsap --sae=ssap --du=du
 
+/**
+Get config request DP telegram
+*/
 class DpTelegramGetCfgRequest extends DpTelegram:
   constructor --da/int --sa/int --fc/int=(FdlTelegram.FC_SRD_HI | FdlTelegram.FC_REQ) --dsap/int=DpTelegram.DSAP_GET_CFG --ssap/int=DpTelegram.SSAP_MS0:
     super --da=da --sa=sa --fc=fc --dsap=dsap --ssap=ssap --du=#[]
@@ -199,13 +243,19 @@ class DpTelegramGetCfgRequest extends DpTelegram:
   dp_to_fdl_telegram -> FdlTelegram:
     return FdlTelegramVariableData --da=da --sa=sa --fc=fc --dae=dsap --sae=ssap --du=du
 
-class DpTelegramChkCfg extends DpTelegram:
+/**
+Check config request DP telegram
+*/
+class DpTelegramChkCfgRequest extends DpTelegram:
   constructor --da/int --sa/int --fc/int=(FdlTelegram.FC_SRD_HI | FdlTelegram.FC_REQ) --dsap/int=DpTelegram.DSAP_CHECK_CFG --ssap/int=DpTelegram.SSAP_MS0 --du/ByteArray:
     super --da=da --sa=sa --fc=fc --dsap=dsap --ssap=ssap --du=du
 
   dp_to_fdl_telegram -> FdlTelegram:
     return FdlTelegramVariableData --da=da --sa=sa --fc=fc --dae=dsap --sae=ssap --du=du
 
+/**
+Data exchange request DP telegram
+*/
 class DpTelegramDataExchangeRequest extends DpTelegram:
   constructor --da/int --sa/int --fc/int=(FdlTelegram.FC_SRD_HI | FdlTelegram.FC_REQ) --du/ByteArray:
     super --da=da --sa=sa --fc=fc --dsap=null --ssap=null --du=du
@@ -214,6 +264,9 @@ class DpTelegramDataExchangeRequest extends DpTelegram:
     return FdlTelegramVariableData --da=da --sa=sa --fc=fc --dae=dsap --sae=ssap --du=du
 
 // --- RESPONSES --- //
+/**
+Diagnose response DP telegram
+*/
 class DpTelegramDiagnoseResponse extends DpTelegram:
   // Byte 0 - Flags
   static B0_STATION_NON_EXISTENT ::= 0x01 // Set to 1 by master if slave cannot be reaced over the line
@@ -256,42 +309,81 @@ class DpTelegramDiagnoseResponse extends DpTelegram:
   dp_to_fdl_telegram -> FdlTelegram:
     return FdlTelegramVariableData --da=da --sa=sa --fc=fc --dae=dsap --sae=ssap --du=du
 
+  /**
+  Returns true if station does not exists, else return false. 
+  */
   station_not_exists -> bool:
     return (byte_0 & B0_STATION_NON_EXISTENT) != 0
 
+  /**
+  Returns true if station/slave is not ready, else return false. 
+  */
   station_not_ready -> bool:
     return (byte_0 & B0_STATION_NOT_READY) != 0
 
+  /**
+  Returns true if there was a mismatch in config data, else return false. 
+  */
   cfg_fault -> bool:
     return (byte_0 & B0_CFG_FAULT) != 0
 
+  /**
+  Returns true if there is a diagnostic entry in the slave specific dianostic area, else return false. 
+  */
   has_ext_diag -> bool:
     return (byte_0 & B0_EXT_DIAG) != 0
 
+  /**
+  Returns true if the requested service is not supported, else return false. 
+  */
   is_not_supported -> bool:
     return (byte_0 % B0_NOT_SUPPORTED) != 0
 
+  /**
+  Returns true if the parameterization failed, else return false. 
+  */
   prm_fault -> bool:
     return (byte_0 & B0_PRM_FAULT) != 0
 
+  /**
+  Returns true if the slave has been parameterized by other slave, else return false. 
+  */
   master_lock -> bool:
     return (byte_0 & B0_MASTER_LOCK) != 0
 
+  /**
+  Returns true if the slave needs to be parameterized, else return false. 
+  */
   prm_required -> bool: 
     return (byte_1 & B1_PRM_REQUIRED) != 0
 
+  /**
+  Returns true if the watchdog is on by the slave, else return false. 
+  */
   watchdog_on -> bool:
     return (byte_1 & B1_WATCHDOG_ON) != 0
 
+  /**
+  Returns true if freeze mode is active, else return false. 
+  */
   freeze_mode -> bool:
     return (byte_1 & B1_FREEZE_MODE) != 0
 
+  /**
+  Returns true if sync mode is active, else return false. 
+  */
   sync_mode -> bool:
     return (byte_1 & B1_SYNC_MODE) != 0
 
+  /**
+  Returns true if the slave is ready for data exchange, else return false. 
+  */
   is_ready_for_data_exchange -> bool:
     return ((byte_0 & (B0_STATION_NON_EXISTENT | B0_STATION_NOT_READY | B0_CFG_FAULT | B0_PRM_FAULT)) == 0 and (byte_1 & B1_PRM_REQUIRED) == 0)
 
+/**
+Get config response DP telegram
+*/
 class DpTelegramGetCfgResponse extends DpTelegram:
   constructor --da/int --sa/int --fc/int=FdlTelegram.FC_DL --dsap/int=DpTelegram.SSAP_MS0 --ssap/int=DpTelegram.DSAP_GET_CFG --du/ByteArray:
     super --da=da --sa=sa --fc=fc --dsap=dsap --ssap=ssap --du=du
@@ -299,6 +391,9 @@ class DpTelegramGetCfgResponse extends DpTelegram:
   dp_to_fdl_telegram -> FdlTelegram:
     return FdlTelegramVariableData --da=da --sa=sa --fc=fc --dae=dsap --sae=ssap --du=du
 
+/**
+Data exchange response DP telegram
+*/
 class DpTelegramDataExchangeResponse extends DpTelegram:
   constructor --da/int --sa/int --fc/int=FdlTelegram.FC_DL --du/ByteArray:
     super --da=da --sa=sa --fc=fc --dsap=null --ssap=null --du=du
@@ -306,6 +401,9 @@ class DpTelegramDataExchangeResponse extends DpTelegram:
   dp_to_fdl_telegram -> FdlTelegram:
     return FdlTelegramVariableData --da=da --sa=sa --fc=fc --dae=dsap --sae=ssap --du=du
 
+/**
+Short acknowledge response DP telegram
+*/
 class DpTelegramShortAcknowledgeResponse extends DpTelegram:
   constructor:
     super --da=null --sa=null --fc=null --dsap=null --ssap=null --du=#[]
@@ -313,6 +411,9 @@ class DpTelegramShortAcknowledgeResponse extends DpTelegram:
   dp_to_fdl_telegram -> FdlTelegram:
     return FdlTelegramShortAcknowledge
 
+/**
+No data response DP telegram
+*/
 class DpTelegramNoDataResponse extends DpTelegram:
   constructor --da/int --sa/int --fc/int=FdlTelegram.FC_DL:
     super --da=da --sa=sa --fc=fc --dsap=null --ssap=null --du=#[]
