@@ -21,3 +21,4 @@ Please file feature requests and bugs at the [issue tracker][tracker].
 [tracker]: https://github.com/Consibio/toit-profibus/issues
 
 # License
+This package is licensed under the MIT license.
